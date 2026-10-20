@@ -1,393 +1,220 @@
-# FS25 Vehicle Year Compatibility Tool
+<p align="center">
+  <img src="Icons/MAINicon.png" width="128" alt="FS25 Vehicle Year Compatibility Tool icon">
+</p>
 
-A standalone CLI and Tkinter GUI that scans Farming Simulator 25 mods, reports
-**which vehicles/implements still have no year support**, and can create and
-maintain a compatible **Vehicle Years Compatibility Tool** addon after a
-reviewed preview.
+<h1 align="center">FS25 Vehicle Year Compatibility Tool</h1>
 
-It understands all three ways a store item can get a year:
+<p align="center">
+  <strong>Find every Farming Simulator 25 vehicle that still needs a year &mdash; and add it safely.</strong>
+</p>
 
-1. the mod's own `<storeData><year>` tag,
-2. the compatibility addon Lua tables
-   (`MOD_VEHICLE_YEARS`, `MOD_YEARS`, `BASE_GAME_YEARS`),
-3. the **FS25 Vehicle Years** database (one XML per vehicle inside
-   `FS25_Vehicle_Years.zip`).
+<p align="center">
+  <a href="https://github.com/MonomCZ/fs25_vehicle_year_compatibility_tool/releases/latest">
+    <img src="https://img.shields.io/github/v/release/MonomCZ/fs25_vehicle_year_compatibility_tool?style=for-the-badge&label=download" alt="Download the latest release">
+  </a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-2f8f5b?style=for-the-badge" alt="Windows and Linux">
+</p>
 
-Everything is read directly from the mod ZIPs and the installed mod files —
-nothing is extracted, nothing is written unless you ask for an output file or
-confirm an addon setup/export.
+A friendly desktop app for **Farming Simulator 25** modders and players. It scans
+your mods, shows exactly which vehicles, implements, trailers and tools still
+need a production year, and helps you fill the gaps without hand-editing Lua.
 
-## Quick start
+It understands the three normal places a year can come from:
 
-```bash
-python3 vycompat.py                  # scan the game mods folder
-python3 vycompat.py --dir ../newmods # scan any folder of mods
-python3 vycompat.py --base-game      # also check base game vehicles
-```
+- the mod's own year tag,
+- the **Vehicle Years Compatibility Tool** addon,
+- the **FS25 Vehicle Years** database.
 
-No dependencies, Python 3.9+.
+Everything stays local. No accounts, no cloud, no telemetry.
 
-The GUI is also packaged as a **GUI-only** Linux AppImage and Windows
-executable by the GitHub Actions workflow. The command-line interface is not
-included in those packages.
+## At a glance
 
-To install the console commands from this folder:
-
-```bash
-python3 -m pip install .
-vycompat --version
-vycompat-gui
-```
-
-Running the scripts directly from the checkout needs no installation.
-
-The editor keeps its source in `FS25_VehicleYears_CompatibilityTool/` next to
-the app, in the current folder, or in your Documents folder. Set
-`VYCOMPAT_ADDON_DIR` to use a different folder containing
-`vehicle_years_addon.lua`; CLI scans work anywhere.
-
-### Missing compatibility addon
-
-When a game mods folder is known, the GUI checks at startup and again
-immediately before scanning. If no compatibility addon is present, it offers to
-create one. It never writes automatically:
-
-- **CREATE BLANK MOD** creates a valid empty **Vehicle Years Compatibility
-  Tool** with the runtime hooks and empty year tables, then installs the ZIP
-  into the mods folder.
-- **INSTALL EXISTING** rebuilds and installs the editable source if it already
-  exists but the ZIP is missing.
-- **EXTRACT SOURCE** appears when the addon is installed but no editable source
-  exists. It copies the installed ZIP or unpacked folder into the source folder
-  so **Add years...**, **Paste years...** and **ADDON HISTORY...** can work with
-  the existing years.
-- **NOT NOW** continues the read-only scan without writing anything.
-
-You can reopen the same prompt with **ADDON SETUP...** in the sidebar. The
-blank mod requires the `FS25_Vehicle_Years` mod and does nothing until you add
-years with **Add years...** or **Paste years...**.
-
-This project is not tied to any particular community addon: the scanner reads
-the standard compatibility tables from an installed ZIP or source folder, and
-the setup flow creates a neutral scaffold with no pre-filled community data.
-
-## GUI
-
-```bash
-python3 vycompat_gui.py    # or: python3 vycompat.py --gui
-```
-
-Tkinter front end (ships with Python, no extra dependencies). It uses an
-original FS25-inspired charcoal/green theme (`vycompat_theme.py`) - game-menu
-header, condensed headings, dense tables, dark cards and no game artwork.
-
-**Simple (default):** pick a folder, press Scan. The list shows only vehicle
-mods by their friendly title - problem mods first, colour-coded - and supported
-mods say *how* they are covered:
-
-- `Supported — mod itself`
-- `Supported — Vehicle Years`
-- `Supported — compatibility tool`
-
-The details pane then just lists the vehicles with their years and what still
-needs a year (with the full explanation, e.g. *added by the compatibility
-tool*). The left rail filters the library by **All mods**, **Needs years**,
-**Supported** and, in Advanced, **Hidden**; the counts follow the scan.
-**Search** (or Ctrl+F) narrows either view by mod title, ZIP name, vehicle,
-brand, category or addon key; several words are matched together.
-
-**Tutorial:** press **F1** or the header **HELP** button for a six-step
-in-app guide. It covers folder selection and scanning, reading statuses and
-filters and search, Advanced exports, Add years including the change review and
-history, and the Copy/Paste years workflow. The guide is a normal non-modal
-window: its layout is not tied to a fixed size or screen position, it does not
-grab input, and it wraps its text and scrolls its body, so it works as a tiled
-or resized window under Hyprland and other tiling window managers. Use the
-left/right arrows to change steps and Esc to close it. It stays available while
-you follow along in the main window.
-
-**Advanced** (checkbox) adds the technical view: ZIP file names instead of
-titles, environment, descVersion, non-vehicle store-item counts, the exact
-`MOD_YEARS` / `MOD_VEHICLE_YEARS` keys to paste, FS22/older and non-vehicle
-mods, and the export buttons (save JSON, append to `years_info.txt`, copy Lua
-suggestions, copy unsupported mods). Its compact status column uses short
-forms (`Supported - VY`, `Supported - tool`, `Needs years 1/2`) so the extra
-columns fit.
-"Include base game vehicles" is always available.
-
-**Adding years:** select a mod whose status says *Needs years*, then press
-**Add years...**. Type one year for the whole mod (stored in `MOD_YEARS`) or
-one year per vehicle (stored in `MOD_VEHICLE_YEARS`), then **Save & export**:
-
-1. a review lists every added, changed and already-present entry, the version
-   bump, the source/ZIP paths and whether the ZIP will be installed; nothing
-   has been written yet,
-2. **Write & rebuild** first stores an undo snapshot in
-   `FS25_VehicleYears_CompatibilityTool/.vycompat_history/`,
-3. the entries are written into
-   `FS25_VehicleYears_CompatibilityTool/vehicle_years_addon.lua`,
-4. the addon `<version>` is bumped and the modDesc description is extended,
-5. `FS25_VehicleYears_CompatibilityTool.zip` is rebuilt,
-6. by default it is installed straight into the game mods folder (untick the
-   box to only build it), and
-7. the folder is rescanned, so the mod shows as supported right away.
-
-If only the installed ZIP exists, **Add years...** offers **EXTRACT SOURCE**
-first and preserves the years already in it.
-
-### App and mod icons
-
-`Icons/MAINicon.png` is the application/window icon and the default icon for a
-newly created **Vehicle Years Compatibility Tool** addon. The Windows `.exe`
-uses `Icons/appicon.ico`, generated from the same image. The AppImage uses the
-main PNG.
-
-`Icons/ALTicon.png` is an optional easter egg. On average, **one in ten GUI
-launches** adds a deliberately colourful **AMAZING ICON** button to the
-sidebar. It opens a preview dialog where you can switch the compatibility
-tool's in-game `icon.png` to the ALT image or restore the main icon:
-
-```bash
-VYCOMPAT_EASTER_EGG=1 python3 vycompat_gui.py   # always show the button
-VYCOMPAT_EASTER_EGG=0 python3 vycompat_gui.py   # never show it
-python3 vycompat_gui.py --easter-egg            # same force-on switch
-python3 vycompat_gui.py --no-easter-egg         # same force-off switch
-```
-
-Nothing is installed until you confirm the dialog. Applying either icon saves
-a normal addon snapshot first, writes `icon.png`, points `modDesc.xml`
-`<iconFilename>` at it, rebuilds the ZIP and only then offers to install the
-rebuilt ZIP (the checkbox is opt-in). Years and the addon version are not
-changed. Restart FS25 after installing to see the new icon. Use **ADDON
-HISTORY...** if you want to undo the change.
-
-The game must be restarted (or the save reloaded) to pick up the new
-compatibility addon. Years must be 1900-2030. An existing year is never
-overwritten - the mod's own `<year>` and the Vehicle Years database still win,
-the compatibility addon only fills gaps. If a year already exists in the addon
-table, the review marks it amber as a change and asks before replacing it.
-
-**Undo / history:** every confirmed addon export (and every restore) saves a
-timestamped snapshot of the compatibility-addon source. **ADDON HISTORY...**
-lists them; select one
-and press **Restore & rebuild** to put the source files back and rebuild the
-ZIP. The current state is snapshotted first, so a restore can itself be undone.
-Installing the restored ZIP is an opt-in checkbox (off by default); the game
-mods folder is never changed by a restore unless you tick it.
-
-**Bulk via text:** **Copy years...** copies the ChatGPT verification prompt
-followed by one `KEY = ?` line for every individual item that still needs a year
-(vehicles, implements, trailers, tools - whole-mod entries are never included):
-
-```
-Find the real-world production year of each FS25 mod vehicle, implement, ...
-...
-ITEMS TO VERIFY:
-
-FS25_ExampleTractor/ExampleTractor = ?
-FS25_ExamplePack/ImplementA = ?
-```
-
-Paste that into ChatGPT, let it fill in the years, then paste its answer back
-with **Paste years...** (the prompt block is skipped automatically). The prompt
-now demands one line per item in the exact form
-`MOD_KEY/ITEM_KEY = YEAR | CERTAINTY | GUESS` (no blank lines, no wrapping).
-`unknown` (like `?`) means no year is written and the line is reported as
-skipped; single-line `(year: 1983, certainty: sure, guess: none)` values are
-accepted too. **Apply years** opens the same change review; after **Write &
-rebuild** it snapshots the addon, writes every filled entry in one go (same
-rebuild/install as above) and reports how many lines were skipped. Lines
-without `/` become `MOD_YEARS` entries, lines with `/` become
-`MOD_VEHICLE_YEARS` entries, and mixing both is still fine (per-vehicle wins at
-runtime).
-
-The scan runs in a background thread, so the window stays responsive.
-Copy/scan confirmations appear as in-app toasts above the status bar; errors
-use a themed modal dialog. Both year dialogs validate entries inline, and the
-Add years dialog scrolls long vehicle lists. On Debian/Ubuntu install
-`python3-tk` if Tkinter is missing.
-
-Example output:
-
-```
-FS25 Vehicle Year Compatibility Tool 1.3.0
-FS25 vehicle year support check
-============================================================
-mods folder : .../FarmingSimulator2025/mods
-VY database : .../mods/FS25_Vehicle_Years.zip (5800 keys)
-addon       : .../mods/FS25_VehicleYears_CompatibilityTool.zip [installed-zip v1.0.0.0] (3 mod + 2 per-vehicle + 1 base entries)
-
-NEEDS YEAR SUPPORT (1 mod(s), 2 vehicle(s))
-------------------------------------------------------------
-FS25_ExampleTractor.zip - Example Tractor [FS25_ExampleTractor] (1/2 vehicle(s) missing)
-    MOD_VEHICLE_YEARS["FS25_ExampleTractor/ExampleTractor"] = ?   Example Tractor (tractors)
-
-SUMMARY
-------------------------------------------------------------
-  mods scanned             : 45
-  FS25 vehicle/implement   : 12
-      fully supported      : 10
-      partially supported  : 1   (1 vehicle(s) missing)
-      not supported        : 1
-  non-vehicle mods         : 30
-  skipped (FS22 or older)  : 2
-
-1 vehicle(s) still need years (- use --lua-suggest for addon entries)
-```
-
-## Packaged builds
-
-The repository-root workflow `.github/workflows/build-desktop.yml` builds both
-GUI-only artifacts:
-
-- **Windows EXE** - one-file, windowed PyInstaller build on `windows-latest`,
-  using `Icons/appicon.ico`.
-- **Linux AppImage** - one-file PyInstaller build assembled on `ubuntu-22.04`,
-  using `Icons/MAINicon.png` and the desktop launcher in `packaging/`.
-
-Run the workflow manually, or push a `v*` tag to attach both files to a GitHub
-release. For a local AppImage build:
-
-```bash
-python3 -m pip install pyinstaller
-python3 packaging/build_appimage.sh
-```
-
-The AppImage is written to the repository `dist/` folder.
-
-## Options
-
-| Option | Meaning |
+| Feature | Details |
 |---|---|
-| `--dir FOLDER` | Folder to scan (repeatable). Default: the game mods folder. Zips and unpacked mod folders are both handled. |
-| `--base-game` | Also scan the FS25 base game vehicles (`<game>/data/vehicles`, `handtools`). |
-| `--base-game-only` | Scan only base game vehicles. |
-| `--include-non-fs25` | Do not skip mods built for FS22 or older (descVersion < 90). |
-| `--verbose`, `-v` | List every vehicle mod with the year source for each vehicle. |
-| `--json FILE` | Write a machine-readable JSON report. |
-| `--years-info FILE` | Append the missing vehicles to a `years_info.txt` style file (years left blank for you to fill in). |
-| `--lua-suggest` | Print ready-to-paste addon Lua lines with `?` years, choosing `MOD_YEARS` vs `MOD_VEHICLE_YEARS` per mod. |
-| `--copy-unsupported DIR` | Copy the mods that need support into DIR (opt-in, never automatic). |
-| `--no-fail` | Exit 0 even when vehicles without years were found. |
-| `--mods-dir FOLDER` | Game mods folder used to locate the installed Vehicle Years and compatibility-addon ZIPs. |
-| `--game-dir DIR` | FS25 install folder (for `--base-game`). |
-| `--vy-zip FILE` | Read the year database from a specific `FS25_Vehicle_Years.zip`. |
-| `--vy-dir DIR` | Read the year database from an extracted `data/` folder instead. |
-| `--addon SOURCE` | `installed` (default, the ZIP or unpacked folder in the mods folder), `source` (the editable `FS25_VehicleYears_CompatibilityTool/vehicle_years_addon.lua`), or an explicit path to either. |
-| `--gui` | Open the graphical interface instead of the console report. |
+| **Finds** | vehicles and implements that still need a year |
+| **Adds** | one year for a whole mod, or one year per vehicle |
+| **Writes** | only after you review and confirm |
+| **Runs on** | Windows x64, Linux x86_64, or Python 3.9+ |
+| **Works with** | ZIP mods and unpacked mod folders |
 
-Exit codes: `0` everything supported, `1` some vehicles still need years,
-`2` a path or source could not be found.
+## Download and run
 
-## How support is detected
+Get the latest version from the
+[**Releases page**](https://github.com/MonomCZ/fs25_vehicle_year_compatibility_tool/releases/latest).
+The packaged builds are **GUI-only** and need no Python installation.
 
-| Source | Key checked |
-|---|---|
-| Mod's own year | `<storeData><year>` inside the item XML |
-| Addon per-vehicle | `customEnvironment .. "/" .. xml file` (no `.xml`) in `MOD_VEHICLE_YEARS` |
-| Addon whole mod | `customEnvironment` in `MOD_YEARS` |
-| Addon base game | `base_data_vehicles_brand_model_model` in `BASE_GAME_YEARS` |
-| Vehicle Years DB | mods: `customEnvironment_raw_path`; base game: `base_data_vehicles_...` — the `data/*.xml` file names inside `FS25_Vehicle_Years.zip` |
+### Windows
 
-The keys are computed exactly like `vehicle_years_addon.lua` does at runtime
-(backslashes normalized, leading `./` stripped, `.xml` suffix removed,
-`$data/...` and `data/...` both map to `base_data_...`).
+1. Download `FS25-Vehicle-Year-Compatibility-Tool.exe`.
+2. Run it. There is no installer.
+3. Windows may show a SmartScreen warning because the build is not code-signed.
+   Only run files downloaded from this repository's Releases page.
 
-## Notes
+### Linux
 
-- Read-only by default: scanning never modifies the game mods folder, mod ZIPs
-  or the compatibility addon. The only writes are the confirmed addon setup,
-  the reviewed GUI addon editor (source Lua + modDesc, snapshot, rebuilt ZIP,
-  optional install into the mods folder), the **ADDON HISTORY...** restore, the
-  confirmed icon swap, and the opt-in CLI output flags (`--json`,
-  `--years-info`, `--copy-unsupported`).
-- Mods with a descVersion below 90 (FS22 and older) are skipped and counted
-  separately, with `--include-non-fs25` to override.
-- Mods without vehicle/handTool store items (maps, placeables, scripts) are
-  counted as *non-vehicle* and ignored.
-- Store items hidden from the shop (`<showInStore>false</showInStore>`, e.g.
-  base game trains) and pallet store items used by maps/productions are ignored.
-- Keys are compared case-sensitively, matching the game's lookup.
-
-## Project layout
-
-```text
-fs25_vehicle_year_compatibility_tool/
-├── .github/workflows/
-│   └── build-desktop.yml      Windows EXE + Linux AppImage CI
-├── AGENTS.md                  Agent guidance for this app
-├── CHANGELOG.md               Release history
-├── Icons/                     App/default icon, ALT easter egg, Windows .ico
-├── LICENSE                    MIT licence (see the ALT-icon note below)
-├── MANIFEST.in                Source archive contents
-├── README.md                  This guide
-├── packaging/                 PyInstaller spec and AppImage assets
-├── pyproject.toml             Package metadata and console scripts
-├── docs/
-│   └── UI_SPEC.md             Visual/UX specification
-├── tests/                     Standard-library unittest suite
-├── vycompat.py                Scanner core, planning/export and CLI
-├── vycompat_gui.py            Tkinter application and dialogs
-├── vycompat_addon.py          Neutral blank-addon modDesc/Lua templates
-├── vycompat_history.py        Addon snapshots, history and undo
-├── vycompat_icons.py          Bundled icon lookup and easter-egg gate
-├── vycompat_theme.py          Palette, styles and dialog helpers
-└── vycompat_tutorial.py       Responsive in-app guide (F1 / Help)
-```
-
-## Release
-
-1. Keep `__version__` in `vycompat.py` and `version` in `pyproject.toml` in
-   sync (currently `1.3.0`).
-2. Update `CHANGELOG.md` and the test count in `README.md` and `AGENTS.md` when
-   it changes.
-3. Run the complete suite:
+1. Download `FS25-Vehicle-Year-Compatibility-Tool-1.3.0-x86_64.AppImage`.
+2. Make it executable, then run it:
 
    ```bash
-   python3 -m unittest discover -s tests -v
+   chmod +x FS25-Vehicle-Year-Compatibility-Tool-1.3.0-x86_64.AppImage
+   ./FS25-Vehicle-Year-Compatibility-Tool-1.3.0-x86_64.AppImage
    ```
 
-4. Build the wheel and source archive (the `build` package is optional; the app
-   itself has no runtime dependencies):
+If your distribution does not have FUSE, install `libfuse2` (Ubuntu/Debian) or
+run the AppImage with `--appimage-extract-and-run`.
 
-   ```bash
-   python3 -m build
-   # or, with only pip/setuptools available:
-   python3 -m pip wheel . --no-deps -w dist
-   ```
+## Your first scan
 
-   Artifacts are written to `dist/`, which is git-ignored. Do not install a
-   rebuilt game addon from the release process; hand the ZIP to the user.
+1. Open the app. It tries to find
+   `Documents/My Games/FarmingSimulator2025/mods` automatically.
+2. If needed, choose your FS25 `mods` folder.
+3. Press **Scan**.
 
-## Development
+Scanning is read-only. Your mods, ZIPs and compatibility tool are not changed
+until you explicitly confirm an edit.
+
+## Reading the results
+
+The list is colour-coded and puts mods that need attention first.
+
+| Status | What it means |
+|---|---|
+| **Needs years** | One or more vehicles still have no year from any source. |
+| **Supported &mdash; mod itself** | The mod already contains its own year data. |
+| **Supported &mdash; Vehicle Years** | The FS25 Vehicle Years database covers it. |
+| **Supported &mdash; compatibility tool** | The compatibility tool fills the gap. |
+
+Click a mod to see its vehicles, the years it already has, and what still
+needs one. FS22 and older mods are skipped by default.
+
+> **Tip:** Press **F1** or the **HELP** button for the built-in six-step guide.
+
+## Adding years
+
+1. Select a mod marked **Needs years**.
+2. Click **Add years...**.
+3. Enter one year for the whole mod, or one year per vehicle.
+4. Review every change in the confirmation window.
+5. Click **Write & rebuild**.
+
+Before anything is written, the app saves an undo snapshot. It then updates the
+compatibility tool, bumps its version, rebuilds the ZIP and — by default —
+installs it into your game mods folder. Untick the install box if you only want
+to build the ZIP.
+
+Restart FS25 (or reload the save) to see the new years in game.
+
+> **No silent overwrites:** the mod's own year and the Vehicle Years database
+> always win. The compatibility tool only fills gaps. If an existing tool value
+> would change, the review marks it and asks first.
+
+## Bulk years with ChatGPT
+
+Doing a lot at once? Use **Copy years...**:
+
+1. The app copies a ready-made verification prompt plus a `KEY = ?` line for
+   every item that still needs a year.
+2. Paste it into ChatGPT and let it fill in the years.
+3. Paste the answer back with **Paste years...**.
+4. Review the changes, then click **Write & rebuild**.
+
+Unknown or `?` answers are skipped, and you can mix whole-mod answers with
+per-vehicle answers.
+
+## Compatibility tool and undo
+
+If no compatibility tool is installed, the app offers to set one up:
+
+- **CREATE BLANK MOD** — creates a clean, empty compatibility tool and installs
+  it.
+- **INSTALL EXISTING** — rebuilds and installs an existing editable source.
+- **EXTRACT SOURCE** — copies an installed addon into an editable source folder
+  while keeping its existing years.
+- **NOT NOW** — continues the read-only scan without changing anything.
+
+You can reopen this with **ADDON SETUP...** in the sidebar. The blank
+compatibility tool requires the `FS25_Vehicle_Years` mod and does nothing until
+you add years.
+
+Every confirmed change creates a timestamped snapshot. Open **ADDON HISTORY...**
+to restore an earlier version. The current state is snapshotted first, so even a
+restore can be undone.
+
+## The secret icon
+
+The compatibility tool normally uses the clean main icon. On average, **one in
+ten launches** adds a very colourful **AMAZING ICON** button to the sidebar.
+
+Click it to preview the alternate icon. You can switch the in-game compatibility
+tool to the ALT icon or restore the main one. The app saves a snapshot, rebuilds
+the ZIP and asks before installing anything. Years and the compatibility tool
+version are not changed.
+
+Want to see it now? Force it on:
 
 ```bash
-python3 -m unittest discover -s tests -v
+# Linux AppImage
+VYCOMPAT_EASTER_EGG=1 ./FS25-Vehicle-Year-Compatibility-Tool-1.3.0-x86_64.AppImage
+
+# From source
+VYCOMPAT_EASTER_EGG=1 python3 vycompat_gui.py
 ```
 
-Tests build synthetic mod ZIPs and addon sources in a temp folder and need no
-game installation. There are 172 tests (CLI, blank-addon scaffold, source
-extraction, planning/export, local snapshot/undo, ChatGPT prompt/template/parser,
-bundled icons/easter egg, native Windows/Linux path discovery, GUI data helpers,
-setup flow, search and dialogs, the FS25-inspired theme, and the responsive
-in-app tutorial); the GUI, theme and tutorial window tests skip themselves when
-no display is available.
+Disable it with `VYCOMPAT_EASTER_EGG=0` in the same place, or use the
+`--easter-egg` / `--no-easter-egg` flags instead.
 
-Files:
+The ALT image is a bit of fun and contains third-party imagery, so it is not
+covered by the project's MIT licence. See
+[`Icons/README.md`](Icons/README.md) for details.
 
-- `vycompat.py` - scanner, detection, prompt/parser, addon setup, planning/export
-- `vycompat_addon.py` - neutral blank compatibility-addon templates
-- `vycompat_gui.py` - themed Tkinter application, filters, search, dialogs and actions
-- `vycompat_history.py` - local addon snapshots, history listing and undo
-- `vycompat_icons.py` - bundled icon paths, icon state and easter-egg chance
-- `vycompat_theme.py` - palette, ttk styles, cards, fonts and dialog helpers
-- `vycompat_tutorial.py` - non-modal responsive in-app guide (F1 / Help)
-- `packaging/` - PyInstaller spec, AppImage launcher and build script
-- `docs/UI_SPEC.md` - visual/UX specification used by the theme
+## Safety
+
+- Scanning never modifies your mods.
+- Nothing is overwritten without a review and confirmation.
+- Compatibility tool changes and icon changes save a snapshot first.
+- Installing into the game mods folder is always shown in the confirmation
+  window.
+- The app works offline and has no telemetry.
+- Only download packaged builds from this repository's Releases page.
+
+## Good to know
+
+- **Search** (or `Ctrl+F`) filters by mod title, ZIP name, vehicle, brand,
+  category or addon key.
+- **Advanced** shows technical details such as ZIP names, environments,
+  descVersion, exact Lua keys and extra export buttons.
+- **Include base game vehicles** checks the game's own vehicles too.
+- Years must be between 1900 and 2030.
+- Restart FS25 after installing a rebuilt compatibility tool.
+
+## Run from source
+
+For development or if you prefer not to use a packaged build:
+
+```bash
+git clone https://github.com/MonomCZ/fs25_vehicle_year_compatibility_tool.git
+cd fs25_vehicle_year_compatibility_tool
+python3 vycompat_gui.py
+```
+
+Requires Python 3.9+ with Tkinter. On Debian/Ubuntu:
+
+```bash
+sudo apt install python3-tk
+```
+
+A command-line scanner is also included:
+
+```bash
+python3 vycompat.py --help
+```
 
 ## License
 
-MIT covers the code and `Icons/MAINicon.png`. `Icons/ALTicon.png` was supplied
-by the project owner and contains third-party meme/logo imagery; it is not
-covered by the MIT licence. Do not redistribute the ALT icon separately or use
-it commercially without checking the original rights. See `Icons/README.md`.
+The app and its main icon are MIT-licensed. `Icons/ALTicon.png` contains
+third-party meme/logo imagery and is **not** covered by the MIT licence; do not
+redistribute it separately or use it commercially without checking the original
+rights.
+
+This is an unofficial community tool and is not affiliated with GIANTS
+Software. Farming Simulator 25 is a trademark of GIANTS Software.
