@@ -1,3 +1,5 @@
+WARNING: THIS IS AI SLOP im not proud of it
+
 <p align="center">
   <img src="Icons/MAINicon.png" width="128" alt="FS25 Vehicle Year Compatibility Tool icon">
 </p>
