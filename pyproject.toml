@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fs25-vehicle-year-compatibility-tool"
+version = "1.3.0"
+description = "Audit and add Farming Simulator 25 vehicle year compatibility"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "FS25 Vehicle Year Compatibility Tool contributors" }]
+keywords = [
+    "farming-simulator",
+    "fs25",
+    "mods",
+    "vehicle-years",
+    "compatibility",
+    "cli",
+    "tkinter",
+]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Games/Entertainment",
+]
+
+[project.scripts]
+vycompat = "vycompat:main"
+vycompat-gui = "vycompat_gui:main"
+
+[tool.setuptools]
+py-modules = [
+    "vycompat",
+    "vycompat_gui",
+    "vycompat_theme",
+    "vycompat_tutorial",
+    "vycompat_history",
+    "vycompat_addon",
+    "vycompat_icons",
+]
+packages = ["Icons"]
+
+[tool.setuptools.package-data]
+Icons = ["*.png", "*.ico"]
