@@ -3,6 +3,27 @@
 All notable changes to the FS25 Vehicle Year Compatibility Tool are documented
 here. The project uses a `MAJOR.MINOR.PATCH` version.
 
+## 1.3.0 — 2026-10-20
+
+- Added `Icons/MAINicon.png` as the application/window icon, the Windows
+  `appicon.ico` source and the default icon for newly created blank addons.
+- Added the optional `Icons/ALTicon.png` easter egg: a colourful **AMAZING
+  ICON** sidebar button appears on roughly 10% of GUI launches. It can be
+  forced with `VYCOMPAT_EASTER_EGG=1` / `--easter-egg` or suppressed with `0` /
+  `--no-easter-egg`.
+- The icon dialog previews the current and alternate icons, saves an addon
+  snapshot, writes `icon.png`, updates `modDesc.xml`'s `<iconFilename>`,
+  rebuilds the ZIP and offers an opt-in install into the game mods folder.
+  Restoring the main icon follows the same reviewed path.
+- Added native Windows discovery for
+  `Documents/My Games/FarmingSimulator2025/mods`, OneDrive Documents and Steam
+  game folders, while keeping the Linux/Proton paths.
+- Added a GUI-only PyInstaller build, AppImage launcher assets and a GitHub
+  Actions workflow that builds a windowed Windows EXE on `windows-latest` and
+  an x86_64 AppImage on `ubuntu-22.04`.
+- Documented the ALT icon's third-party licensing status.
+- Test suite expanded to 172 tests.
+
 ## 1.2.0 — 2026-10-20
 
 - Added **ADDON SETUP...**, a startup prompt and a pre-scan prompt when the

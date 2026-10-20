@@ -27,6 +27,10 @@ python3 vycompat.py --base-game      # also check base game vehicles
 
 No dependencies, Python 3.9+.
 
+The GUI is also packaged as a **GUI-only** Linux AppImage and Windows
+executable by the GitHub Actions workflow. The command-line interface is not
+included in those packages.
+
 To install the console commands from this folder:
 
 ```bash
@@ -131,6 +135,32 @@ one year per vehicle (stored in `MOD_VEHICLE_YEARS`), then **Save & export**:
 If only the installed ZIP exists, **Add years...** offers **EXTRACT SOURCE**
 first and preserves the years already in it.
 
+### App and mod icons
+
+`Icons/MAINicon.png` is the application/window icon and the default icon for a
+newly created **Vehicle Years Compatibility Tool** addon. The Windows `.exe`
+uses `Icons/appicon.ico`, generated from the same image. The AppImage uses the
+main PNG.
+
+`Icons/ALTicon.png` is an optional easter egg. On average, **one in ten GUI
+launches** adds a deliberately colourful **AMAZING ICON** button to the
+sidebar. It opens a preview dialog where you can switch the compatibility
+tool's in-game `icon.png` to the ALT image or restore the main icon:
+
+```bash
+VYCOMPAT_EASTER_EGG=1 python3 vycompat_gui.py   # always show the button
+VYCOMPAT_EASTER_EGG=0 python3 vycompat_gui.py   # never show it
+python3 vycompat_gui.py --easter-egg            # same force-on switch
+python3 vycompat_gui.py --no-easter-egg         # same force-off switch
+```
+
+Nothing is installed until you confirm the dialog. Applying either icon saves
+a normal addon snapshot first, writes `icon.png`, points `modDesc.xml`
+`<iconFilename>` at it, rebuilds the ZIP and only then offers to install the
+rebuilt ZIP (the checkbox is opt-in). Years and the addon version are not
+changed. Restart FS25 after installing to see the new icon. Use **ADDON
+HISTORY...** if you want to undo the change.
+
 The game must be restarted (or the save reloaded) to pick up the new
 compatibility addon. Years must be 1900-2030. An existing year is never
 overwritten - the mod's own `<year>` and the Vehicle Years database still win,
@@ -180,7 +210,7 @@ Add years dialog scrolls long vehicle lists. On Debian/Ubuntu install
 Example output:
 
 ```
-FS25 Vehicle Year Compatibility Tool 1.2.0
+FS25 Vehicle Year Compatibility Tool 1.3.0
 FS25 vehicle year support check
 ============================================================
 mods folder : .../FarmingSimulator2025/mods
@@ -204,6 +234,26 @@ SUMMARY
 
 1 vehicle(s) still need years (- use --lua-suggest for addon entries)
 ```
+
+## Packaged builds
+
+The repository-root workflow `.github/workflows/build-desktop.yml` builds both
+GUI-only artifacts:
+
+- **Windows EXE** - one-file, windowed PyInstaller build on `windows-latest`,
+  using `Icons/appicon.ico`.
+- **Linux AppImage** - one-file PyInstaller build assembled on `ubuntu-22.04`,
+  using `Icons/MAINicon.png` and the desktop launcher in `packaging/`.
+
+Run the workflow manually, or push a `v*` tag to attach both files to a GitHub
+release. For a local AppImage build:
+
+```bash
+python3 -m pip install pyinstaller
+python3 packaging/build_appimage.sh
+```
+
+The AppImage is written to the repository `dist/` folder.
 
 ## Options
 
@@ -248,8 +298,9 @@ The keys are computed exactly like `vehicle_years_addon.lua` does at runtime
 - Read-only by default: scanning never modifies the game mods folder, mod ZIPs
   or the compatibility addon. The only writes are the confirmed addon setup,
   the reviewed GUI addon editor (source Lua + modDesc, snapshot, rebuilt ZIP,
-  optional install into the mods folder), the **ADDON HISTORY...** restore, and
-  the opt-in CLI output flags (`--json`, `--years-info`, `--copy-unsupported`).
+  optional install into the mods folder), the **ADDON HISTORY...** restore, the
+  confirmed icon swap, and the opt-in CLI output flags (`--json`,
+  `--years-info`, `--copy-unsupported`).
 - Mods with a descVersion below 90 (FS22 and older) are skipped and counted
   separately, with `--include-non-fs25` to override.
 - Mods without vehicle/handTool store items (maps, placeables, scripts) are
@@ -262,11 +313,15 @@ The keys are computed exactly like `vehicle_years_addon.lua` does at runtime
 
 ```text
 fs25_vehicle_year_compatibility_tool/
+├── .github/workflows/
+│   └── build-desktop.yml      Windows EXE + Linux AppImage CI
 ├── AGENTS.md                  Agent guidance for this app
 ├── CHANGELOG.md               Release history
-├── LICENSE                    MIT licence
+├── Icons/                     App/default icon, ALT easter egg, Windows .ico
+├── LICENSE                    MIT licence (see the ALT-icon note below)
 ├── MANIFEST.in                Source archive contents
 ├── README.md                  This guide
+├── packaging/                 PyInstaller spec and AppImage assets
 ├── pyproject.toml             Package metadata and console scripts
 ├── docs/
 │   └── UI_SPEC.md             Visual/UX specification
@@ -275,6 +330,7 @@ fs25_vehicle_year_compatibility_tool/
 ├── vycompat_gui.py            Tkinter application and dialogs
 ├── vycompat_addon.py          Neutral blank-addon modDesc/Lua templates
 ├── vycompat_history.py        Addon snapshots, history and undo
+├── vycompat_icons.py          Bundled icon lookup and easter-egg gate
 ├── vycompat_theme.py          Palette, styles and dialog helpers
 └── vycompat_tutorial.py       Responsive in-app guide (F1 / Help)
 ```
@@ -282,7 +338,7 @@ fs25_vehicle_year_compatibility_tool/
 ## Release
 
 1. Keep `__version__` in `vycompat.py` and `version` in `pyproject.toml` in
-   sync (currently `1.2.0`).
+   sync (currently `1.3.0`).
 2. Update `CHANGELOG.md` and the test count in `README.md` and `AGENTS.md` when
    it changes.
 3. Run the complete suite:
@@ -310,11 +366,12 @@ python3 -m unittest discover -s tests -v
 ```
 
 Tests build synthetic mod ZIPs and addon sources in a temp folder and need no
-game installation. There are 154 tests (CLI, blank-addon scaffold, source
+game installation. There are 172 tests (CLI, blank-addon scaffold, source
 extraction, planning/export, local snapshot/undo, ChatGPT prompt/template/parser,
-GUI data helpers, setup flow, search and dialogs, the FS25-inspired theme, and
-the responsive in-app tutorial); the GUI, theme and tutorial window tests skip
-themselves when no display is available.
+bundled icons/easter egg, native Windows/Linux path discovery, GUI data helpers,
+setup flow, search and dialogs, the FS25-inspired theme, and the responsive
+in-app tutorial); the GUI, theme and tutorial window tests skip themselves when
+no display is available.
 
 Files:
 
@@ -322,10 +379,15 @@ Files:
 - `vycompat_addon.py` - neutral blank compatibility-addon templates
 - `vycompat_gui.py` - themed Tkinter application, filters, search, dialogs and actions
 - `vycompat_history.py` - local addon snapshots, history listing and undo
+- `vycompat_icons.py` - bundled icon paths, icon state and easter-egg chance
 - `vycompat_theme.py` - palette, ttk styles, cards, fonts and dialog helpers
 - `vycompat_tutorial.py` - non-modal responsive in-app guide (F1 / Help)
+- `packaging/` - PyInstaller spec, AppImage launcher and build script
 - `docs/UI_SPEC.md` - visual/UX specification used by the theme
 
 ## License
 
-MIT
+MIT covers the code and `Icons/MAINicon.png`. `Icons/ALTicon.png` was supplied
+by the project owner and contains third-party meme/logo imagery; it is not
+covered by the MIT licence. Do not redistribute the ALT icon separately or use
+it commercially without checking the original rights. See `Icons/README.md`.

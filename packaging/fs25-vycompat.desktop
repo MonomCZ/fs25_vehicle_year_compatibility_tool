@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=FS25 Vehicle Year Compatibility Tool
+Comment=Audit FS25 vehicle years and edit the compatibility addon
+Exec=fs25-vycompat
+Icon=fs25-vycompat
+Terminal=false
+Categories=Utility;
+Keywords=FS25;Farming Simulator;mods;vehicle years;compatibility;
+X-AppImage-Version=1.3.0

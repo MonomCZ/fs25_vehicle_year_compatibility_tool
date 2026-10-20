@@ -45,4 +45,4 @@ py-modules = [
 packages = ["Icons"]
 
 [tool.setuptools.package-data]
-Icons = ["*.png", "*.ico"]
+Icons = ["*.png", "*.ico", "*.md"]

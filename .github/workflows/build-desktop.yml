@@ -1,0 +1,82 @@
+name: Build desktop packages
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows EXE
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check Tkinter
+        run: python -c "import tkinter; print('Tk', tkinter.TkVersion)"
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+      - name: Build windowed EXE
+        run: >-
+          python -m PyInstaller --noconfirm --clean
+          --distpath dist/windows --workpath build/windows
+          packaging/fs25_vycompat.spec
+      - name: Verify EXE
+        shell: pwsh
+        run: |
+          $exe = "dist/windows/FS25-Vehicle-Year-Compatibility-Tool.exe"
+          if (-not (Test-Path $exe)) { throw "Missing $exe" }
+          Get-Item $exe | Format-List Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: dist/windows/*.exe
+          if-no-files-found: error
+
+  linux:
+    name: Linux AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Tkinter and AppImage tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk python3-venv curl libfuse2
+      - name: Build AppImage
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip pyinstaller
+          PYTHON="$PWD/.venv/bin/python" bash packaging/build_appimage.sh
+      - name: Verify AppImage
+        run: |
+          file dist/*.AppImage
+          chmod +x dist/*.AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: Attach release files
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+      - name: List release files
+        run: find release -maxdepth 3 -type f -print
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/windows-exe/*.exe
+            release/linux-appimage/*.AppImage
+          generate_release_notes: true

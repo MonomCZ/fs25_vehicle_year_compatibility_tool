@@ -66,23 +66,32 @@ console scripts.
 | File | Responsibility |
 |---|---|
 | `vycompat.py` | Scanner core, source/ZIP readers, year detection, resolution, CLI, prompt/parser helpers, addon setup/planning/export. |
-| `vycompat_gui.py` | Tkinter application: library, filters, search, details, background scan, setup prompt, year dialogs, review dialog, history dialog and actions. |
+| `vycompat_gui.py` | Tkinter application: library, filters, search, details, background scan, setup prompt, year dialogs, review dialog, history dialog, icon dialog and actions. |
 | `vycompat_addon.py` | Neutral `modDesc.xml` and Lua templates for the blank **Vehicle Years Compatibility Tool** addon. |
 | `vycompat_history.py` | Timestamped addon source snapshots, history listing, restore-and-rebuild. |
+| `vycompat_icons.py` | Bundled main/ALT icon lookup, icon-state detection and the 10% easter-egg gate. |
 | `vycompat_theme.py` | FS25-inspired palette, fonts, ttk styles, cards, dialog helpers. Styling only. |
 | `vycompat_tutorial.py` | Six-step non-modal in-app tutorial (`F1` / **HELP**). |
+| `Icons/` | `MAINicon.png` (app/default mod icon), `ALTicon.png` (easter egg), `appicon.ico` (Windows) and provenance notes. |
+| `packaging/` | GUI-only PyInstaller spec, AppImage `AppRun`/desktop assets and local build script. |
+| `.github/workflows/build-desktop.yml` | Builds the windowed Windows EXE and x86_64 Linux AppImage in CI. |
 | `docs/UI_SPEC.md` | Visual/UX specification used by the theme and UI. |
 | `CHANGELOG.md` | Release history and version notes. |
 | `MANIFEST.in` | Extra files included in the source archive. |
-| `tests/test_vycompat.py` | Scanner, normalization, prompt/parser and CLI tests. |
-| `tests/test_export.py` | Blank-addon scaffold, setup detection, editing, planning, versioning, export/ZIP/install tests. |
+| `tests/test_vycompat.py` | Scanner, normalization, prompt/parser, CLI and default-path tests. |
+| `tests/test_export.py` | Blank-addon scaffold, setup detection, editing, planning, versioning, export/ZIP/install and icon-swap tests. |
 | `tests/test_history.py` | Snapshot, manifest, list and restore/undo tests. |
-| `tests/test_vycompat_gui.py` | GUI data helpers, search, dialogs and app-flow tests. |
+| `tests/test_icons.py` | Bundled icon assets, icon-state detection and easter-egg gating tests. |
+| `tests/test_vycompat_gui.py` | GUI data helpers, search, dialogs, easter-egg button and app-flow tests. |
 | `tests/test_theme.py` | Theme and helper tests. |
 | `tests/test_tutorial.py` | Tutorial content, window and responsiveness tests. |
 
-`pyproject.toml` registers the six packaged modules in `py-modules`; add any
-new top-level module there.
+`pyproject.toml` registers the seven packaged modules in `py-modules`; add any
+new top-level module there. `Icons` is also registered as a package so its PNG,
+ICO and README assets are installed with the wheel.
+
+The desktop packages are GUI-only. Do not add the CLI entry point to the
+PyInstaller spec or the AppImage launcher.
 
 ## Scan and detection model
 
@@ -249,9 +258,12 @@ Run from `fs25_vehicle_year_compatibility_tool/`:
 python3 -m unittest discover -s tests -v
 ```
 
-The suite currently has **154 tests**. It creates synthetic mod ZIPs and
+The suite currently has **172 tests**. It creates synthetic mod ZIPs and
 blank/addon sources in temporary folders and does not need the game installed.
-GUI/theme/tutorial tests skip when no display is available.
+GUI/theme/tutorial tests skip when no display is available. Keep icon tests on
+the checked-in assets and keep the game mods folder untouched; patch
+`vycompat.default_mods_dir()`/`vycompat.SOURCE_ADDON_LUA` for flows that would
+otherwise touch real game data.
 
 When changing behavior:
 

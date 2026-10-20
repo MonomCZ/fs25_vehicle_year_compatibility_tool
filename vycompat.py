@@ -143,16 +143,104 @@ LUA_TABLE_NAMES = ("MOD_VEHICLE_YEARS", "MOD_YEARS", "BASE_GAME_YEARS")
 # default paths
 # ---------------------------------------------------------------------------
 
+def _documents_dirs():
+    """Likely native-Windows Documents folders, including OneDrive."""
+    candidates = []
+    userprofile = os.environ.get("USERPROFILE")
+    if userprofile:
+        candidates.append(Path(userprofile) / "Documents")
+    candidates.append(HOME / "Documents")
+    for variable in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
+        value = os.environ.get(variable)
+        if value:
+            candidates.append(Path(value) / "Documents")
+    candidates.append(HOME / "OneDrive" / "Documents")
+
+    seen = set()
+    unique = []
+    for candidate in candidates:
+        key = str(candidate)
+        if key not in seen:
+            seen.add(key)
+            unique.append(candidate)
+    return unique
+
+
+def _windows_steam_install():
+    """Read Steam's install folder from the Windows registry when available."""
+    if os.name != "nt":
+        return None
+    try:
+        import winreg
+    except ImportError:
+        return None
+    locations = (
+        (winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam", "SteamPath"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\Valve\Steam", "InstallPath"),
+        (
+            winreg.HKEY_LOCAL_MACHINE,
+            r"Software\WOW6432Node\Valve\Steam",
+            "InstallPath",
+        ),
+    )
+    for hive, key_name, value_name in locations:
+        try:
+            with winreg.OpenKey(hive, key_name) as key:
+                value, _kind = winreg.QueryValueEx(key, value_name)
+        except OSError:
+            continue
+        if value:
+            return Path(value)
+    return None
+
+
+def _steam_roots():
+    roots = list(STEAM_ROOTS)
+    if os.name == "nt":
+        install = _windows_steam_install()
+        if install is not None:
+            roots.insert(0, install / "steamapps")
+        for variable in ("ProgramFiles(x86)", "ProgramFiles"):
+            value = os.environ.get(variable)
+            if value:
+                roots.append(Path(value) / "Steam" / "steamapps")
+        roots.extend(
+            [
+                Path("C:/Program Files (x86)/Steam/steamapps"),
+                Path("C:/Program Files/Steam/steamapps"),
+            ]
+        )
+    return roots
+
+
 def default_game_dir():
-    for root in STEAM_ROOTS:
+    for root in _steam_roots():
         candidate = root / "common" / GAME_DIR_NAME
         if candidate.is_dir():
             return candidate
+    if os.name == "nt":
+        for variable in ("ProgramFiles(x86)", "ProgramFiles", "ProgramW6432"):
+            value = os.environ.get(variable)
+            if not value:
+                continue
+            candidate = Path(value) / GAME_DIR_NAME
+            if candidate.is_dir():
+                return candidate
+        for path in (
+            Path("C:/Program Files (x86)") / GAME_DIR_NAME,
+            Path("C:/Program Files") / GAME_DIR_NAME,
+        ):
+            if path.is_dir():
+                return path
     return None
 
 
 def default_mods_dir():
-    for root in STEAM_ROOTS:
+    for documents in _documents_dirs():
+        candidate = documents / "My Games" / "FarmingSimulator2025" / "mods"
+        if candidate.is_dir():
+            return candidate
+    for root in _steam_roots():
         candidate = root / "compatdata" / COMPATDATA_ID / DOCS_REL / "mods"
         if candidate.is_dir():
             return candidate

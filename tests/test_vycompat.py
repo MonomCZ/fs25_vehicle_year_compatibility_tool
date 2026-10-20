@@ -318,5 +318,60 @@ local other = {
         self.assertFalse((target / "FS25_Ok.zip").exists())
 
 
+class DefaultPathTest(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_native_documents_mods_folder(self):
+        mods = self.tmp / "Documents" / "My Games" / "FarmingSimulator2025" / "mods"
+        mods.mkdir(parents=True)
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(
+            vycompat, "HOME", self.tmp
+        ), mock.patch.object(vycompat, "STEAM_ROOTS", []):
+            self.assertEqual(vycompat.default_mods_dir(), mods)
+
+    def test_onedrive_documents_mods_folder(self):
+        one_drive = self.tmp / "OneDrive"
+        mods = one_drive / "Documents" / "My Games" / "FarmingSimulator2025" / "mods"
+        mods.mkdir(parents=True)
+        with mock.patch.dict(
+            os.environ, {"OneDrive": str(one_drive)}, clear=True
+        ), mock.patch.object(vycompat, "HOME", self.tmp), mock.patch.object(
+            vycompat, "STEAM_ROOTS", []
+        ):
+            self.assertEqual(vycompat.default_mods_dir(), mods)
+
+    def test_proton_mods_folder(self):
+        steam = self.tmp / "steam"
+        mods = (
+            steam / "steamapps" / "compatdata" / vycompat.COMPATDATA_ID
+            / "pfx" / "drive_c" / "users" / "steamuser" / "Documents"
+            / "My Games" / "FarmingSimulator2025" / "mods"
+        )
+        mods.mkdir(parents=True)
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(
+            vycompat, "HOME", self.tmp
+        ), mock.patch.object(
+            vycompat, "_steam_roots", return_value=[steam / "steamapps"]
+        ):
+            self.assertEqual(vycompat.default_mods_dir(), mods)
+
+    def test_steam_game_folder(self):
+        game = (
+            self.tmp / "steam" / "steamapps" / "common"
+            / vycompat.GAME_DIR_NAME
+        )
+        game.mkdir(parents=True)
+        with mock.patch.object(
+            vycompat, "_steam_roots",
+            return_value=[self.tmp / "steam" / "steamapps"],
+        ):
+            self.assertEqual(vycompat.default_game_dir(), game)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

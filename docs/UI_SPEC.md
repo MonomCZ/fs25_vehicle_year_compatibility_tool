@@ -118,7 +118,9 @@ Suggested sections: - **Overview** - **Mod Library** - **Year Review** -
 Navigation behavior: - Selected section uses a muted green background or
 a left green indicator bar. - Icons are simple, consistent line icons. -
 Labels are always visible on desktop. - Avoid colorful emoji icons. -
-Keep the number of navigation entries low.
+Keep the number of navigation entries low. The rare, explicitly opt-in
+**AMAZING ICON** easter-egg button is the one intentional exception; it stays
+hidden unless the 10% roll or a force switch enables it.
 
 ### Content panels
 
@@ -296,6 +298,8 @@ Never make API mode the only way to use the app.
 -   Do not decorate every panel with tractor images. This is a
     productivity tool, not a game launcher.
 -   If imagery is used, keep it subtle and functional.
+-   `Icons/ALTicon.png` is a user-supplied, non-MIT easter egg; do not use it
+    as normal navigation or marketing artwork.
 
 ## Motion
 
